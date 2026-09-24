@@ -38,16 +38,18 @@ test('만 5세 카드 = 초1 준비: 덧셈·뺄셈은 9 이하, 수는 50까지
   });
 });
 
-test('만 6세 카드 = 초1 수준: 0~50, 받아올림은 (몇)+(몇)·(십몇)−(몇)만, 똑같이 나누기 20 이하', () => {
-  let div = 0;
+test('만 6세 카드 = 초1 수준: 0~50, 받아올림은 (몇)+(몇)·(십몇)−(몇)만, 곱셈·나눗셈 포함', () => {
+  let div = 0, mul = 0;
   each('g1', q => {
     const { type, a, b, n, k } = q.anim;
-    if (type === 'div') { div++; assert.ok(n <= 20 && k >= 2 && k <= 5, q.text); return; }
+    if (type === 'div') { div++; assert.ok(n <= 25 && k >= 2 && k <= 5 && q.answer <= 5, q.text); return; }
+    if (type === 'mul') { mul++; assert.ok(a >= 2 && a <= 5 && q.answer <= 45, q.text); return; }
     assert.ok(Math.max(a, b, q.answer) <= 50, q.text);
     if (type === 'add' && carry(a, b)) assert.ok(a < 10 && b < 10, `초1 범위 밖 받아올림: ${q.text}`);
     if (type === 'sub' && borrow(a, b)) assert.ok(a < 20 && b < 10, `초1 범위 밖 받아내림: ${q.text}`);
   });
   assert.ok(div > N * 3 * 0.1, `나누기 비율 ${div}`);
+  assert.ok(mul > N * 3 * 0.1, `곱하기 비율 ${mul}`);
 });
 
 test('만 7세 카드 = 초2 수준: 구구단(2~9단), 받아올림 있는 두 자리 ±, 세·네 자리 수', () => {

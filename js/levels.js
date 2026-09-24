@@ -55,8 +55,8 @@ function plain(op, a, b) {
   });
 }
 
-function times(tables) {
-  const a = pick(tables), b = int(1, 9);
+function times(tables, bMax = 9) {
+  const a = pick(tables), b = int(1, bMax);
   const [e, name] = pick(ANIMALS);
   const ans = a * b;
   return Q({
@@ -104,7 +104,8 @@ const pre1 = d => mix([
   [[0, 1, 3][d], () => unit(pick(['L3-1', 'L3-2']), 0)],                 // 50까지의 수
 ]);
 
-// ── 만 6세 → 초1 수준 (0~50, 1학년 2학기: 두 자리 ± 받아올림 없음, 10 만들기, 십몇−몇) + 똑같이 나누기 ──
+// ── 만 6세 → 초1 수준 (0~50, 1학년 2학기: 두 자리 ± 받아올림 없음, 10 만들기, 십몇−몇)
+//    + 요청에 따라 곱셈(몇씩 몇 묶음)·나눗셈(똑같이 나누기). 교육과정상 곱셈은 2학년, 나눗셈은 3학년 ──
 const g1 = {
   twoOne() { // 두 자리 ± 한 자리, 받아올림·받아내림 없음 (0 포함)
     if (int(0, 1)) { let a, b; do { a = int(10, 48); b = int(0, 9); } while ((a % 10) + b > 9 || a + b > 50); return arith('+', a, b); }
@@ -128,7 +129,10 @@ const grade1 = d => mix([
   [[0, 2, 1.5][d], g1.make10],
   [[0, 2, 1.5][d], g1.teenSub],
   [[0, 0, 2][d], g1.twoTwo],
-  [1.5, () => { const k = pick([2, 2, 3, 4, 5].slice(0, [2, 3, 5][d])); return share(k * int(1, [5, 5, 4][d]), k); }], // 똑같이 나누기 (20 이하)
+  // 곱셈: 몇씩 몇 묶음 (쉬움 2·5씩 → 2~5씩, 어려움은 9묶음까지, 곱 45 이하)
+  [2, () => times(d === 0 ? [2, 5] : [2, 3, 4, 5], d === 2 ? 9 : 5)],
+  // 나눗셈: 똑같이 나누기 (쉬움 ÷2 → ÷2~3 → ÷2~5, 25 이하)
+  [2, () => { const k = pick([2, 2, 3, 4, 5].slice(0, [2, 3, 5][d])); return share(k * int(1, 5), k); }],
 ]);
 
 // ── 만 7세 → 초2 수준 (곱셈구구, 받아올림 있는 두 자리 ±, 세 자리·네 자리 수) ──
@@ -233,7 +237,7 @@ function fiveDigit(d) {
 export const LEVELS = [
   { id: 'k5', age: '만 4세', lv: '5세 수준', title: '10까지 세기', icon: '🐥', color: '#FFE3B8', young: true, gen: k5 },
   { id: 'pre1', age: '만 5세', lv: '초1 준비', title: '9까지 더하기·빼기', icon: '🐰', color: '#FFD9E2', gen: pre1 },
-  { id: 'g1', age: '만 6세', lv: '초1 수준', title: '50까지 계산·나누기', icon: '🐶', color: '#DDEFFF', gen: grade1 },
+  { id: 'g1', age: '만 6세', lv: '초1 수준', title: '50까지 + − × ÷', icon: '🐶', color: '#DDEFFF', gen: grade1 },
   { id: 'g2', age: '만 7세', lv: '초2 수준', title: '구구단·받아올림', icon: '🐼', color: '#EDE3FF', gen: grade2 },
   { id: 'g3', age: '만 8세', lv: '초3 수준', title: '나눗셈·세 자리 수', icon: '🐻', color: '#E2F5E4', gen: grade3 },
   { id: 'big5', age: '도전', lv: '초4 수준', title: '다섯 자리 수', icon: '🐯', color: '#FFF1C9', gen: fiveDigit },
