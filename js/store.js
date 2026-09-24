@@ -1,14 +1,14 @@
-// 저장: 진행 상황은 localStorage(문제 제출 즉시 커밋), 사진은 IndexedDB. 서버 업로드 없음.
-const KEY = 'sansu.v2';
+// 저장: 진행 상황은 localStorage(답할 때마다 저장), 사진은 IndexedDB. 서버 업로드 없음.
+import { newState } from './game.js';
 
-function blank() {
-  return { profiles: {}, order: [], gate: { fails: 0, lockUntil: 0 } };
-}
+const KEY = 'sansu.v3';
+
+const blank = () => ({ ...newState(), gate: { fails: 0, lockUntil: 0 } });
 
 export function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    return s && s.profiles ? { ...blank(), ...s } : blank();
+    return s && s.v === 3 ? { ...blank(), ...s } : blank();
   } catch {
     return blank();
   }

@@ -26,7 +26,7 @@ const pic = (v, html) => ({ v, html });
 const withUnit = (u) => c => ({ v: c.v, html: `<b class="num">${c.v}<small>${u}</small></b>` });
 
 // 정답 + 오개념 오답(extra) 우선 + 근처 수. 순서 = 우선순위 (엔진이 개수를 자른 뒤 섞음)
-function numOpts(ans, k = 4, lo = 0, hi = 9999, spread = 3, extra = []) {
+export function numOpts(ans, k = 4, lo = 0, hi = 9999, spread = 3, extra = []) {
   const s = new Set([ans]);
   for (const e of extra) if (s.size < k && e >= lo && e <= hi && Number.isInteger(e)) s.add(e);
   for (let i = 0; s.size < k && i < 80; i++) {
@@ -42,7 +42,7 @@ function strOpts(ans, extra) {
   return [...s].map(v => txt(v));
 }
 
-function Q(o) {
+export function Q(o) {
   return {
     kind: 'choice',
     hint: { say: '천천히 다시 볼까?' },

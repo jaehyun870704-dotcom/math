@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { UNITS, UNIT, AREA_SEQ, diagItem, AGE_START } from '../js/curriculum.js';
-import { fitChoices } from '../js/engine.js';
+import { fitChoices } from '../js/game.js';
 
 test('단원 수: 수와 연산 42 + 도형과 측정 16 + 변화와 관계 5 + 자료와 가능성 7 = 70', () => {
   const by = a => UNITS.filter(u => u.area === a).length;
