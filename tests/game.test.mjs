@@ -42,8 +42,8 @@ test('만 6세 카드 = 초1 수준: 0~50, 받아올림은 (몇)+(몇)·(십몇)
   let div = 0, mul = 0;
   each('g1', q => {
     const { type, a, b, n, k } = q.anim;
-    if (type === 'div') { div++; assert.ok(n <= 25 && k >= 2 && k <= 5 && q.answer <= 5, q.text); return; }
-    if (type === 'mul') { mul++; assert.ok(a >= 2 && a <= 5 && q.answer <= 45, q.text); return; }
+    if (type === 'div') { div++; assert.ok(n <= 20 && k >= 2 && k <= 4 && q.answer <= 5, q.text); return; }
+    if (type === 'mul') { mul++; assert.ok(a >= 2 && a <= 5 && q.anim.b <= 5 && q.answer <= 25, q.text); return; }
     assert.ok(Math.max(a, b, q.answer) <= 50, q.text);
     if (type === 'add' && carry(a, b)) assert.ok(a < 10 && b < 10, `초1 범위 밖 받아올림: ${q.text}`);
     if (type === 'sub' && borrow(a, b)) assert.ok(a < 20 && b < 10, `초1 범위 밖 받아내림: ${q.text}`);
@@ -125,4 +125,16 @@ test('카드 안 난이도: 5연속 정답 → 올라감, 2연속 오답 → 내
   assert.equal(lvSt(s, 'g2').diff, 1);
   solve(s, 2, true);
   assert.equal(lvSt(s, 'g2').diff, 0);
+});
+
+test('초2·초3 난이도 상한: 문장제·곱셈 수 범위', () => {
+  each('g2', q => {
+    if (q.topic === '문장제') for (const n of nums(q)) assert.ok(n <= 70, q.say);
+    if (q.topic === '세 수의 계산') assert.ok(q.answer >= 0 && q.answer <= 70, q.say);
+  });
+  each('g3', q => {
+    if (q.topic === '두 자리 × 두 자리') { const [a, b] = nums(q); assert.ok(a <= 29 && b <= 19, q.say); }
+    if (q.topic === '세 자리 × 한 자리') assert.ok(q.answer < 1500, q.say);
+    if (q.topic === '나머지 있는 나눗셈') assert.ok(nums(q)[1] <= 6, q.say);
+  });
 });
