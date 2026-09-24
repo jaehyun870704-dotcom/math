@@ -385,3 +385,7 @@ body[data-young="1"] .ch { border-radius: 30px; }
 .acell.sparkle { box-shadow: 0 0 0 4px #FFE58A, var(--shadow); }
 .atotal { color: var(--soft); font-size: 20px; margin: 4px 0 0; }
 .parent header { display: flex; }
+.zoo.xs:not(.groups) { max-width: 460px; gap: 2px; }
+.zoo.xs:not(.groups) .an { font-size: 30px; width: 42px; text-align: center; padding: 0; }
+.tbl.place th { font-size: 28px; min-width: 90px; }
+.tbl.place td { font-size: 52px; }

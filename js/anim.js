@@ -32,20 +32,21 @@ function span(parent, cls, text) {
 async function animals(el, { type, a, b, e, name }, step, wait, alive) {
   const add = type === 'add';
   const n = add ? a + b : a;
-  el.innerHTML = `<div class="zoo ${n > 20 ? 's' : n > 10 ? 'm' : 'l'}"></div>`;
+  el.innerHTML = `<div class="zoo ${n > 30 ? 'xs' : n > 20 ? 's' : n > 10 ? 'm' : 'l'}"></div>`;
+  const gap = b > 10 ? 120 : 330; // 많이 들어오거나 떠날 때는 빠르게
   const zoo = el.firstChild;
   const base = [];
   for (let i = 0; i < a; i++) base.push(span(zoo, 'an cnt pop', e));
-  await step(`${iga(name)} ${cnt(a)} 마리 있어`, 700);
+  await step(a ? `${iga(name)} ${cnt(a)} 마리 있어` : `아직 ${iga(name)} 없어`, 700);
   if (!alive()) return;
   if (add) {
     for (let i = 0; i < b; i++) {
       if (!alive()) return;
       span(zoo, 'an cnt new hop', e);
       sfx.tap();
-      await wait(330);
+      await wait(gap);
     }
-    await step(`${cnt(b)} 마리가 더 왔어!`, 600);
+    await step(b ? `${cnt(b)} 마리가 더 왔어!` : '아무도 안 왔어!', 600);
     await step('모두 몇 마리일까?', 100);
   } else {
     const leaving = base.slice(a - b);
@@ -54,10 +55,10 @@ async function animals(el, { type, a, b, e, name }, step, wait, alive) {
       s.classList.remove('cnt');
       s.classList.add('bye');
       sfx.tap();
-      await wait(300);
+      await wait(gap);
     }
-    await wait(700);
-    await step(`${cnt(b)} 마리가 집에 갔어`, 600);
+    if (b) await wait(700);
+    await step(b ? `${cnt(b)} 마리가 집에 갔어` : '아무도 안 갔어', 600);
     await step('남은 건 몇 마리일까?', 100);
   }
 }

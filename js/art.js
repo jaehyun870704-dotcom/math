@@ -377,3 +377,8 @@ export function randColor(except = []) {
   const keys = Object.keys(COLORS).filter(k => !except.includes(k));
   return keys[int(0, keys.length - 1)];
 }
+
+// 자릿값 표 (만·천·백·십·일)
+export function placeChart(heads, digits) {
+  return `<table class="tbl place"><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr><tr>${digits.map(d => `<td>${d}</td>`).join('')}</tr></table>`;
+}
