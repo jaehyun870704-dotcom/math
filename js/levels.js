@@ -14,11 +14,10 @@ function fromUnits(ids) {
   };
 }
 
-function arith(op, a, b) {
+function arith(op, a, b, blocks = false) {
   const [e, name] = pick(ANIMALS);
   const add = op === '+';
   const ans = add ? a + b : a - b;
-  const blocks = Math.max(a, b, ans) > 20;
   return Q({
     say: `${a} ${add ? '더하기' : '빼기'} ${b}${eun(b)}?`,
     text: `${a} ${add ? '+' : '−'} ${b} = ?`,
@@ -59,11 +58,16 @@ export const LEVELS = [
     young: true, gen: fromUnits(['L1-1', 'L1-2', 'L1-3', 'L1-4']),
   },
   {
-    id: 'add10', age: '만 6세', title: '10까지 더하기·빼기', icon: '🐶', color: '#DDEFFF',
+    id: 'add10', age: '만 6세', title: '30까지 더하기·빼기', icon: '🐶', color: '#DDEFFF',
+    // 쉬움: 10까지 → 보통: 20까지 → 어려움: 30까지
     gen: d => {
-      const max = d === 0 ? 5 : 10;
-      if (d === 0 || int(0, 1) === 0) { const a = int(1, max - 1); return arith('+', a, int(1, max - a)); }
-      const a = int(2, max);
+      const max = [10, 20, 30][d];
+      const lo = d === 0 ? 3 : max / 2;
+      if (int(0, 1) === 0) {
+        const sum = int(lo, max), a = int(1, sum - 1);
+        return arith('+', a, sum - a);
+      }
+      const a = int(lo, max);
       return arith('-', a, int(1, a - 1));
     },
   },
@@ -90,7 +94,7 @@ export const LEVELS = [
       } else { // 두 자리 ± 두 자리
         do { a = int(21, 89); b = int(12, 69); } while (add ? a + b >= 100 : b >= a);
       }
-      return arith(add ? '+' : '-', a, b);
+      return arith(add ? '+' : '-', a, b, true);
     },
   },
   {

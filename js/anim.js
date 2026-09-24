@@ -31,7 +31,8 @@ function span(parent, cls, text) {
 
 async function animals(el, { type, a, b, e, name }, step, wait, alive) {
   const add = type === 'add';
-  el.innerHTML = `<div class="zoo ${(add ? a + b : a) > 10 ? 'm' : 'l'}"></div>`;
+  const n = add ? a + b : a;
+  el.innerHTML = `<div class="zoo ${n > 20 ? 's' : n > 10 ? 'm' : 'l'}"></div>`;
   const zoo = el.firstChild;
   const base = [];
   for (let i = 0; i < a; i++) base.push(span(zoo, 'an cnt pop', e));

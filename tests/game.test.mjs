@@ -28,6 +28,7 @@ test('만 4세는 세기만, 초2는 구구단만 나옴', () => {
 test('더하기·빼기 모션 정보: 20 이하는 동물, 두 자리는 블록', () => {
   for (let i = 0; i < 300; i++) {
     for (const id of ['add10', 'add20']) {
+      const qq = LEVEL[id].gen(2); if (id === 'add10') assert.ok(Math.max(qq.anim.a, qq.answer) <= 30);
       const q = LEVEL[id].gen(2);
       assert.ok(['add', 'sub'].includes(q.anim.type), id);
       assert.equal(q.answer, q.anim.type === 'add' ? q.anim.a + q.anim.b : q.anim.a - q.anim.b);
@@ -79,4 +80,18 @@ test('레벨 안 난이도: 5연속 정답 → 올라감, 2연속 오답 → 내
   assert.equal(lvSt(s, 'add20').diff, 1);
   solve(s, 2, true);
   assert.equal(lvSt(s, 'add20').diff, 0);
+});
+
+test('만 6세: 쉬움 10까지 → 보통 20까지 → 어려움 30까지, 모두 동물 모션', () => {
+  for (const [d, max] of [[0, 10], [1, 20], [2, 30]]) {
+    let top = 0;
+    for (let i = 0; i < 400; i++) {
+      const q = LEVEL.add10.gen(d);
+      const big = Math.max(q.anim.a, q.anim.a + (q.anim.type === 'add' ? q.anim.b : 0));
+      assert.ok(big <= max, `d${d} ${q.text}`);
+      assert.ok(['add', 'sub'].includes(q.anim.type));
+      top = Math.max(top, big);
+    }
+    assert.equal(top, max);
+  }
 });
