@@ -1,0 +1,11 @@
+{
+  "name": "uri-jip-sansu",
+  "version": "2.0.0",
+  "private": true,
+  "description": "우리집 산수 앱 — 만 4세~초2 태블릿 웹앱",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "npx --yes http-server -p 8080 -c-1 ."
+  }
+}
