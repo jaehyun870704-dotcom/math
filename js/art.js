@@ -382,3 +382,11 @@ export function randColor(except = []) {
 export function placeChart(heads, digits) {
   return `<table class="tbl place"><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr><tr>${digits.map(d => `<td>${d}</td>`).join('')}</tr></table>`;
 }
+
+// 분수 막대: n칸 중 k칸 색칠
+export function fracBar(n, k) {
+  const w = 480 / n;
+  let s = '';
+  for (let i = 0; i < n; i++) s += `<rect x="${4 + i * w}" y="4" width="${w}" height="90" fill="${i < k ? '#8FD3A8' : '#fff'}" stroke="#4E9A6B" stroke-width="3"/>`;
+  return `<svg class="fracbar" viewBox="0 0 488 98">${s}</svg>`;
+}

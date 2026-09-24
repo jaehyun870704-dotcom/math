@@ -52,32 +52,30 @@ test('만 6세 카드 = 초1 수준: 0~50, 받아올림은 (몇)+(몇)·(십몇)
   assert.ok(mul > N * 3 * 0.1, `곱하기 비율 ${mul}`);
 });
 
-test('만 7세 카드 = 초2 수준: 구구단(2~9단), 받아올림 있는 두 자리 ±, 세·네 자리 수', () => {
-  let mul = 0;
-  each('g2', (q, d) => {
-    if (q.anim?.type === 'mul') {
-      mul++;
-      assert.ok(q.anim.a >= 2 && q.anim.a <= 9 && q.anim.b <= 9);
-      if (d === 0) assert.ok([2, 5].includes(q.anim.a));
-    } else if (q.anim) {
-      assert.ok(['badd', 'bsub'].includes(q.anim.type));
-      assert.ok(q.anim.a < 100 && q.anim.b < 100);
-      assert.ok(q.anim.type === 'badd' ? carry(q.anim.a, q.anim.b) : borrow(q.anim.a, q.anim.b), q.text);
-    } else assert.ok(['L6-2', 'L6-3'].includes(q.unit), q.unit);
+const topics = (id, d) => { const s = new Set(); for (let i = 0; i < 3000; i++) s.add(LEVEL[id].gen(d).topic); return s; };
+
+test('만 7세 카드 = 초2 수준: 교과서·익힘책 유형이 모두 나옴', () => {
+  const all = new Set([...topics('g2', 0), ...topics('g2', 1), ...topics('g2', 2)]);
+  for (const t of ['곱셈구구', '곱셈구구 □', '0과 1의 곱', '받아올림·받아내림', '세 수의 계산', '□ 구하기', '문장제', '세 자리 수', '네 자리 수', '시각 읽기', '길이·시간']) assert.ok(all.has(t), t);
+  assert.ok(!topics('g2', 0).has('곱셈구구 □'), '쉬움 단계에 □ 구하기가 나오면 안 됨');
+  each('g2', q => {
+    if (q.anim?.type === 'mul') assert.ok(q.anim.a >= 2 && q.anim.a <= 9 && q.anim.b <= 9);
+    if (q.anim?.type === 'badd') assert.ok(carry(q.anim.a, q.anim.b) && q.answer < 100, q.text);
+    if (q.anim?.type === 'bsub') assert.ok(borrow(q.anim.a, q.anim.b), q.text);
+    for (const n of nums(q)) assert.ok(n <= 9999, q.say);
   });
-  assert.ok(mul > N * 3 * 0.35, `구구단 비율 ${mul}`);
 });
 
-test('만 8세 카드 = 초3 수준: 구구단 범위 나눗셈, 세 자리 ±, 두 자리 × 한 자리', () => {
+test('만 8세 카드 = 초3 수준: 교과서·익힘책 유형이 모두 나옴', () => {
+  const all = new Set([...topics('g3', 0), ...topics('g3', 1), ...topics('g3', 2)]);
+  for (const t of ['나눗셈', '곱셈과 나눗셈의 관계', '세 자리 덧셈·뺄셈', '두 자리 × 한 자리', '세 자리 × 한 자리', '두 자리 × 두 자리', '나머지 있는 나눗셈', '두 자리 ÷ 한 자리', '분수', '소수', '단위', '문장제']) assert.ok(all.has(t), t);
+  assert.ok(topics('g3', 2).has('두 자리 × 두 자리') && !topics('g3', 0).has('두 자리 × 두 자리'));
   each('g3', q => {
-    if (q.anim) {
-      assert.equal(q.anim.type, 'div');
-      assert.ok(q.anim.k >= 2 && q.anim.k <= 9 && q.answer >= 1 && q.answer <= 9, q.text);
-      return;
+    if (q.anim) assert.ok(q.anim.type === 'div' && q.anim.k >= 2 && q.anim.k <= 9 && q.answer <= 9, q.text);
+    if (q.topic === '나머지 있는 나눗셈') {
+      const [n, k] = nums(q), [qq, r] = q.answer.match(/\d+/g).map(Number);
+      assert.ok(r > 0 && r < k && qq * k + r === n, q.say);
     }
-    const [a, b] = nums(q);
-    if (q.text.includes('×')) assert.ok(a >= 10 && a < 100 && b >= 2 && b <= 9, q.text);
-    else assert.ok(a >= 100 && a < 1000 && b >= 100 && b < 1000 && q.answer < 1000, q.text);
   });
 });
 

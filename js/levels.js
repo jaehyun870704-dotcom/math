@@ -1,6 +1,6 @@
 // 난이도 카드 — 나이보다 한 해 앞선 수준 (2022 개정 교육과정 / 누리과정 기준)
 // 고른 카드의 문제만 나오고, 카드 안에서는 d=0→2 (학기 순서)로 서서히 어려워진다.
-import { int, pick, sample, rand, eun, readKo } from './util.js';
+import { int, pick, sample, rand, eun, wa, readKo } from './util.js';
 import { UNIT, Q, numOpts } from './curriculum.js';
 import * as A from './art.js';
 
@@ -12,12 +12,16 @@ const SNACKS = [['🍪', '쿠키'], ['🍓', '딸기'], ['🍬', '사탕'], ['�
 
 const unit = (id, d) => ({ ...UNIT[id].gen(d, { passed: () => false }), unit: id });
 
-// [가중치, 문제 만들기] 중에서 하나
+// [가중치, 문제 만들기, 유형 이름] 중에서 하나
 function mix(list) {
-  const total = list.reduce((s, [w]) => s + w, 0);
+  const live = list.filter(([w]) => w > 0);
+  const total = live.reduce((s, [w]) => s + w, 0);
   let r = rand() * total;
-  for (const [w, f] of list) if ((r -= w) < 0) return f();
-  return list[list.length - 1][1]();
+  let hit = live[live.length - 1];
+  for (const x of live) if ((r -= x[0]) < 0) { hit = x; break; }
+  const q = hit[1]();
+  if (hit[2]) q.topic = hit[2];
+  return q;
 }
 
 // 더하기·빼기. blocks=true면 수 모형(십 막대·낱개), 아니면 동물
@@ -140,11 +144,105 @@ function carry2() {
   if (int(0, 1)) { let a, b; do { a = int(12, 89); b = int(12, 89); } while ((a % 10) + (b % 10) < 10 || a + b >= 100); return arith('+', a, b, true); }
   let a, b; do { a = int(30, 98); b = int(12, a - 10); } while ((a % 10) >= (b % 10)); return arith('-', a, b, true);
 }
+// ── 교과서·익힘책 유형 공통 도구 ──
+const jw = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c % 28 ? a : b); };
+const iga = n => (eun(n) === '은' ? '이' : '가');
+const withU = u => v => ({ v, html: `<b class="num">${v}<small>${u}</small></b>` });
+const strs = (ans, wrong) => [...new Set([ans, ...wrong])].map(v => ({ v, html: `<b class="txt">${v}</b>` }));
+const boxed = s => s.replace('□', '<span class="box">□</span>');
+// 식을 읽는 말: "□ + 18 = 67" → "네모 더하기 18은 67, 네모는?"
+function readExpr(s) {
+  const words = t => t.trim().replace(/×/g, '곱하기').replace(/÷/g, '나누기').replace(/\+/g, '더하기').replace(/−/g, '빼기').replace(/□/g, '네모');
+  const [left, right] = s.split('=');
+  const lw = words(left), last = left.trim().split(' ').pop();
+  const josa = /^\d+$/.test(last) ? eun(+last) : '는';
+  const r = right.trim();
+  if (r === '?' || r === '□') return `${lw}${josa}?`;
+  return `${lw}${josa} ${r}, 네모는?`;
+}
+const NAMES = ['지우', '서아', '도하', '수아', '민재', '하루'];
+const THINGS2 = [['사탕', '개'], ['구슬', '개'], ['색종이', '장'], ['연필', '자루'], ['딱지', '장'], ['귤', '개']];
+
+// 문장제: 문장을 크게 보여 주고 읽어 줌
+function story(sentence, answer, choices, hint = '무엇을 구하는지 다시 읽어봐') {
+  return Q({ say: sentence, text: '문장제', visual: `<div class="story">${sentence}</div>`, choices, answer, hideText: true, layout: 'wide', hint: { say: hint }, key: sentence });
+}
+// □ 구하기·세 수 계산 같은 식 문제
+function exprQ(expr, answer, choices, hint) {
+  return Q({ say: readExpr(expr), text: expr, visual: A.eq(boxed(expr)), choices, answer, hideText: true, hint: { say: hint }, key: expr });
+}
+const nums = (ans, extra, hi = 99999) => numOpts(ans, 4, 0, hi, 2, extra);
+
+// ── 초2 ──
+function timesBox() { // 곱셈구구 □ 구하기
+  const a = int(2, 9), b = int(2, 9), right = int(0, 1);
+  const expr = right ? `${a} × □ = ${a * b}` : `□ × ${b} = ${a * b}`;
+  const ans = right ? b : a;
+  return exprQ(expr, ans, nums(ans, [ans + 1, ans - 1, a * b - (right ? a : b)], 9), '구구단을 거꾸로 생각해');
+}
+function zeroOne() { // 0의 곱, 1의 곱
+  const z = pick([0, 1]), n = int(2, 9);
+  const [a, b] = int(0, 1) ? [z, n] : [n, z];
+  return exprQ(`${a} × ${b} = ?`, a * b, nums(a * b, [a + b, n, z === 0 ? 1 : 0], 20), z === 0 ? '0을 곱하면 항상 0' : '1을 곱하면 그대로야');
+}
+function threeNum() { // 세 수의 계산 (앞에서부터)
+  const a = int(35, 70), b = int(11, 29), c = int(5, 25); // 앞에서부터 빼도 음수가 안 나오게
+  const plus = int(0, 1) === 0;
+  const ans = plus ? a + b - c : a - b + c;
+  return exprQ(`${a} ${plus ? '+' : '−'} ${b} ${plus ? '−' : '+'} ${c} = ?`, ans, nums(ans, [plus ? a + b + c : a - b - c, ans + 10, ans - 10]), '앞에서부터 차례로 계산해');
+}
+function boxAS() { // 덧셈·뺄셈 □ 구하기 (덧셈과 뺄셈의 관계)
+  const x = int(15, 58), a = int(13, 39), t = int(0, 3);
+  const [expr, ans] = [[`□ + ${a} = ${x + a}`, x], [`${a} + □ = ${x + a}`, x], [`${x + a} − □ = ${a}`, x], [`□ − ${a} = ${x}`, x + a]][t];
+  return exprQ(expr, ans, nums(ans, [ans + 10, ans - 10, x + a + a]), t === 3 ? '빼기를 더하기로 바꿔 봐' : '더하기를 빼기로 바꿔 봐');
+}
+function word2(d) {
+  const [n1, n2] = sample(NAMES, 2);
+  const [th, u] = pick(THINGS2);
+  const U = withU(u), ul = jw(u, '을', '를');
+  const t = pick([['join', 'sep', 'groups'], ['join', 'sep', 'cmp', 'groups', 'times'], ['cmp', 'times', 'some', 'bus', 'sep']][d]);
+  if (t === 'join') {
+    let a, b; do { a = int(15, 68); b = int(12, 39); } while ((a % 10) + (b % 10) < 10 || a + b >= 100);
+    return story(`${n1}는 ${jw(th, '을', '를')} ${a}${u} 가지고 있어요. ${b}${ul} 더 받았어요. 모두 몇 ${u}일까요?`, a + b, nums(a + b, [a + b - 10, a - b, a + b + 10]).map(c => U(c.v)));
+  }
+  if (t === 'sep') {
+    let a, b; do { a = int(41, 95); b = int(12, a - 10); } while ((a % 10) >= (b % 10));
+    return story(`${jw(th, '이', '가')} ${a}${u} 있었는데 친구에게 ${b}${ul} 주었어요. 남은 ${jw(th, '은', '는')} 몇 ${u}일까요?`, a - b, nums(a - b, [a + b, a - b + 10, a - b - 10]).map(c => U(c.v)));
+  }
+  if (t === 'cmp') {
+    const a = int(40, 95), b = int(12, a - 11);
+    return story(`${n1}는 ${jw(th, '을', '를')} ${a}${u}, ${n2}는 ${b}${u} 가지고 있어요. ${n1}는 ${n2}보다 몇 ${u} 더 많이 가지고 있을까요?`, a - b, nums(a - b, [a + b, a - b + 10, a - b - 1]).map(c => U(c.v)));
+  }
+  if (t === 'groups') {
+    const a = int(3, 9), b = int(3, 9);
+    return story(`한 상자에 ${jw(th, '이', '가')} ${a}${u}씩 들어 있어요. ${b}상자에 들어 있는 ${jw(th, '은', '는')} 모두 몇 ${u}일까요?`, a * b, nums(a * b, [a + b, a * b + a, a * b - b]).map(c => U(c.v)), `${a}씩 ${b}묶음이야`);
+  }
+  if (t === 'times') {
+    const a = int(3, 9), b = int(2, 9);
+    return story(`${n1}는 ${jw(th, '을', '를')} ${a}${u} 가지고 있어요. ${n2}는 ${n1}의 ${b}배만큼 가지고 있어요. ${n2}는 몇 ${u} 가지고 있을까요?`, a * b, nums(a * b, [a + b, a * b + a, a * b - a]).map(c => U(c.v)), `${a}의 ${b}배는 ${a}씩 ${b}번`);
+  }
+  if (t === 'some') {
+    const x = int(15, 50), a = int(12, 45);
+    return story(`어떤 수에 ${a}${eul_(a)} 더했더니 ${x + a}${iga(x + a)} 되었어요. 어떤 수는 얼마일까요?`, x, nums(x, [x + a + a, x + 10, x - 10]), '거꾸로 빼 봐');
+  }
+  const a = int(25, 45), b = int(8, 19), c = int(6, 18);
+  return story(`버스에 ${a}명이 타고 있었어요. 이번 정류장에서 ${b}명이 내리고 ${c}명이 탔어요. 지금 버스에 탄 사람은 몇 명일까요?`, a - b + c, nums(a - b + c, [a + b + c, a - b - c, a - b + c + 10]).map(c2 => withU('명')(c2.v)), '내린 건 빼고 탄 건 더해');
+}
+const eul_ = n => (eun(n) === '은' ? '을' : '를');
+
+// ── 만 7세 → 초2 수준 (2학년 1·2학기 교과서·익힘책 유형) ──
 const grade2 = d => mix([
-  [5, () => times([[2, 5], [2, 3, 4, 5], [2, 3, 4, 5, 6, 7, 8, 9]][d])],
-  [3, carry2],
-  [[2, 1, 1][d], () => unit('L6-2', d)],
-  [[0, 1, 1][d], () => unit('L6-3', d)],
+  [[2.5, 2, 1.5][d], () => times([[2, 5, 3, 4], [2, 3, 4, 5, 6, 7, 8, 9], [2, 3, 4, 5, 6, 7, 8, 9]][d]), '곱셈구구'],
+  [[0, 1.5, 1.5][d], timesBox, '곱셈구구 □'],
+  [[0, 0.5, 0.7][d], zeroOne, '0과 1의 곱'],
+  [[2, 1, 0.7][d], carry2, '받아올림·받아내림'],
+  [[0, 1, 1][d], threeNum, '세 수의 계산'],
+  [[0.7, 1.3, 1.5][d], boxAS, '□ 구하기'],
+  [[1.5, 2, 2.5][d], () => word2(d), '문장제'],
+  [[1, 0.5, 0.3][d], () => unit('L6-2', d), '세 자리 수'],
+  [[0, 0.7, 0.5][d], () => unit('L6-3', d), '네 자리 수'],
+  [[0, 1, 1][d], () => unit('B14', d), '시각 읽기'],
+  [[0, 0, 1.2][d], () => unit(pick(['B10', 'B12', 'B15']), d), '길이·시간'],
 ]);
 
 // ── 만 8세 → 초3 수준 (나눗셈, 세 자리 ± 세 자리, 두 자리 × 한 자리) ──
@@ -166,10 +264,110 @@ function twoByOne(d) {
   do { a = int(11, 49); b = int(2, 9); } while (d === 1 ? (a % 10) * b >= 10 || Math.floor(a / 10) * b >= 10 : (a % 10) * b < 10);
   return plain('×', a, b);
 }
+function divBox() { // 곱셈과 나눗셈의 관계
+  const k = int(2, 9), q = int(2, 9), t = int(0, 2);
+  const [expr, ans] = [[`□ ÷ ${k} = ${q}`, k * q], [`${k * q} ÷ □ = ${q}`, k], [`${k} × ${q} = □`, k * q]][t];
+  return exprQ(expr, ans, nums(ans, [ans + k, ans - 1, q + k], 99), t === 0 ? '곱셈으로 바꿔 봐' : '구구단을 떠올려 봐');
+}
+function threeByOne() { // 세 자리 × 한 자리
+  let a, b; do { a = int(112, 489); b = int(2, 9); } while (a * b >= 4000);
+  return plain('×', a, b);
+}
+function twoByTwo() { // 두 자리 × 두 자리
+  return plain('×', int(12, 49), int(11, 39));
+}
+function twoDivOne() { // 두 자리 ÷ 한 자리 (나머지 없음)
+  const k = int(2, 6), q = int(11, Math.floor(99 / k)), n = k * q;
+  return exprQ(`${n} ÷ ${k} = ?`, q, nums(q, [q + 10, q - 1, q + 1], 99), '십의 자리부터 나눠 봐');
+}
+const remLabel = (q, r) => `몫 ${q} · 나머지 ${r}`;
+function remDiv() { // 나머지가 있는 나눗셈
+  const k = int(3, 9), q = int(2, 9), r = int(1, k - 1), n = k * q + r;
+  const ans = remLabel(q, r);
+  return Q({ say: `${n} 나누기 ${k}의 몫과 나머지는?`, text: `${n} ÷ ${k}`, visual: A.eq(`${n} ÷ ${k} = ? … ?`), hideText: true, layout: 'wide',
+    choices: strs(ans, [remLabel(q + 1, r), remLabel(q, r === k - 1 ? r - 1 : r + 1), remLabel(q - 1, r + k)]), answer: ans,
+    hint: { say: '나머지는 나누는 수보다 작아야 해' }, key: `${n}r${k}` });
+}
+const fracHTML = (a, b) => `<span class="frac"><i>${a}</i><i>${b}</i></span>`;
+function fraction(d) {
+  if (d === 0) { // 색칠한 부분은 전체의 몇 분의 몇
+    const n = pick([2, 3, 4, 5, 6, 8]), k = int(1, n - 1);
+    const opt = (a, b) => ({ v: `${a}/${b}`, html: `<b class="num">${fracHTML(a, b)}</b>` });
+    const cands = [[k, n], [n - k, n], [k, n + 1], [k + 1, n], [k, n - 1]].filter(([a, b]) => a >= 1 && a < b); // 진분수만
+    const seen = new Set(), choices = [];
+    for (const [a, b] of cands) if (!seen.has(`${a}/${b}`)) { seen.add(`${a}/${b}`); choices.push(opt(a, b)); }
+    return Q({ say: '색칠한 부분은 전체의 몇 분의 몇일까?', text: '몇 분의 몇?', visual: A.fracBar(n, k), choices, answer: `${k}/${n}`, hint: { say: '전체를 똑같이 몇 칸으로 나눴는지 봐' }, key: `f${k}/${n}` });
+  }
+  const m = pick([2, 3, 4, 5]), each = int(2, 6), whole = m * each;
+  const kk = d === 1 || m === 2 ? 1 : int(2, m - 1), ans = each * kk;
+  return Q({ say: `${whole}의 ${m}분의 ${kk}${eun(kk)} 얼마일까?`, text: '분수만큼', visual: `<div class="eq big">${whole}의 ${fracHTML(kk, m)}</div>`, hideText: true,
+    choices: nums(ans, [whole - ans, each, ans + each], 99), answer: ans,
+    concrete: `<div class="eq big">${whole}의 ${fracHTML(kk, m)}</div>` + A.groups(m, each, '🍓'), hint: { say: `${whole}${eul_(whole)} ${m}묶음으로 나눠 봐` }, key: `f${whole}:${kk}/${m}` });
+}
+function decimal() {
+  const t = int(0, 2), k = int(1, 9), a = int(1, 9);
+  if (t === 0) return Q({ say: `0.1이 ${k}개인 수는?`, text: '소수', visual: A.eq(`0.1이 ${k}개`), hideText: true, choices: strs(`0.${k}`, [`${k}`, `0.0${k}`, `${k}.1`]), answer: `0.${k}`, hint: { say: '0.1이 10개면 1이야' } });
+  if (t === 1) return Q({ say: `${a}${wa(a)} 0.${k}만큼인 수는?`, text: '소수', visual: A.eq(`${a}${wa(a)} 0.${k}`), hideText: true, choices: strs(`${a}.${k}`, [`${k}.${a}`, `${a + k}`, `0.${a}${k}`, `${a + 1}.${k}`]), answer: `${a}.${k}`, hint: { say: '자연수 뒤에 점을 찍고 써' } });
+  return Q({ say: `${a}.${k}는 0.1이 몇 개일까?`, text: '소수', visual: A.eq(`${a}.${k} = 0.1이 □개`), hideText: true, choices: nums(a * 10 + k, [a + k, a * 100 + k, k], 999), answer: a * 10 + k, hint: { say: '1은 0.1이 10개야' } });
+}
+function units3(d) {
+  const t = pick([['mm', 'km', 'sec'], ['mm', 'km', 'sec', 'tadd'], ['km', 'tadd', 'L', 'kg', 'tsub']][d]);
+  const conv = (say, expr, ans, u, wrong, hint) => Q({ say, text: '단위 바꾸기', visual: A.eq(boxed(expr)), hideText: true, choices: nums(ans, wrong).map(c => withU(u)(c.v)), answer: ans, hint: { say: hint } });
+  if (t === 'mm') { const c = int(2, 15), m = int(1, 9); return conv(`${c}센티미터 ${m}밀리미터는 몇 밀리미터?`, `${c} cm ${m} mm = □ mm`, c * 10 + m, 'mm', [c + m, c * 100 + m], '1 cm는 10 mm야'); }
+  if (t === 'km') { const k = int(1, 9), m = pick([50, 100, 250, 400, 500, 750, 80]); return conv(`${k}킬로미터 ${m}미터는 몇 미터?`, `${k} km ${m} m = □ m`, k * 1000 + m, 'm', [k * 100 + m, k * 1000 + m * 10, k + m], '1 km는 1000 m야'); }
+  if (t === 'sec') { const mi = int(1, 4), s = int(5, 55); return conv(`${mi}분 ${s}초는 몇 초?`, `${mi}분 ${s}초 = □초`, mi * 60 + s, '초', [mi * 100 + s, mi + s, mi * 60 + s + 10], '1분은 60초야'); }
+  if (t === 'L') { const l = int(1, 5), ml = pick([200, 350, 500, 800, 50]); return conv(`${l}리터 ${ml}밀리리터는 몇 밀리리터?`, `${l} L ${ml} mL = □ mL`, l * 1000 + ml, 'mL', [l * 100 + ml, l * 1000 + ml * 10, l + ml], '1 L는 1000 mL야'); }
+  if (t === 'kg') { const k = int(1, 5), g = pick([300, 450, 700, 60, 900]); return conv(`${k}킬로그램 ${g}그램은 몇 그램?`, `${k} kg ${g} g = □ g`, k * 1000 + g, 'g', [k * 100 + g, k * 1000 + g * 10, k + g], '1 kg은 1000 g이야'); }
+  const h1 = int(1, 3), m1 = int(20, 50), h2 = int(1, 2), m2 = int(15, 45);
+  const f = mins => `${Math.floor(mins / 60)}시간 ${mins % 60}분`;
+  if (t === 'tadd') {
+    const tot = (h1 + h2) * 60 + m1 + m2;
+    return Q({ say: `${h1}시간 ${m1}분 더하기 ${h2}시간 ${m2}분은?`, text: '시간의 덧셈', visual: A.eq(`${h1}시간 ${m1}분 + ${h2}시간 ${m2}분`, false), hideText: true, layout: 'wide',
+      choices: strs(f(tot), [`${h1 + h2}시간 ${m1 + m2}분`, f(tot + 60), f(tot - 10)]), answer: f(tot), hint: { say: '60분은 1시간으로 바꿔' } });
+  }
+  const big = (h1 + 2) * 60 + m1, small = h2 * 60 + m2, diff = big - small;
+  return Q({ say: `${h1 + 2}시간 ${m1}분 빼기 ${h2}시간 ${m2}분은?`, text: '시간의 뺄셈', visual: A.eq(`${h1 + 2}시간 ${m1}분 − ${h2}시간 ${m2}분`, false), hideText: true, layout: 'wide',
+    choices: strs(f(diff), [f(diff + 60), f(diff + 10), f(Math.max(0, diff - 60))]), answer: f(diff), hint: { say: '분끼리 먼저 빼 봐' } });
+}
+function word3(d) {
+  const [th, u] = pick(THINGS2);
+  const U = withU(u), ul = jw(u, '을', '를');
+  const t = pick([['mul', 'div', 'add'], ['mul', 'div', 'rem', 'add'], ['mul', 'rem', 'div2', 'time', 'sub']][d]);
+  if (t === 'mul') { const a = int(12, 48), b = int(3, 9); return story(`한 봉지에 ${jw(th, '이', '가')} ${a}${u}씩 들어 있어요. ${b}봉지에 들어 있는 ${jw(th, '은', '는')} 모두 몇 ${u}일까요?`, a * b, nums(a * b, [a + b, a * b + 10, a * b - a]).map(c => U(c.v)), `${a}씩 ${b}묶음이야`); }
+  if (t === 'div') { const k = int(3, 9), q = int(2, 9); return story(`${th} ${k * q}${ul} ${k}명에게 똑같이 나누어 주려고 해요. 한 명에게 몇 ${u}씩 줄 수 있을까요?`, q, nums(q, [q + 1, k, q - 1], 99).map(c => U(c.v)), `${k}단 구구단을 떠올려 봐`); }
+  if (t === 'div2') { const k = int(2, 4), q = int(12, 24); return story(`${th} ${k * q}${ul} ${k}명에게 똑같이 나누어 주려고 해요. 한 명에게 몇 ${u}씩 줄 수 있을까요?`, q, nums(q, [q + 10, q - 1, k * q - k], 99).map(c => U(c.v)), '십의 자리부터 나눠 봐'); }
+  if (t === 'rem') {
+    const k = int(4, 8), q = int(3, 9), r = int(1, k - 1), n = k * q + r;
+    const lab = (a, b) => `${a}봉지, ${b}${u} 남음`;
+    return story(`${th} ${n}${ul} 한 봉지에 ${k}${u}씩 담으면 몇 봉지가 되고 몇 ${u}${jw(u, '이', '가').slice(u.length)} 남을까요?`, lab(q, r), strs(lab(q, r), [lab(q + 1, r), lab(q - 1, r + k), lab(q, r + 1 < k ? r + 1 : r - 1)]), '나머지는 봉지에 못 담아');
+  }
+  if (t === 'add') {
+    let a, b; do { a = int(245, 689); b = int(128, 399); } while ((a % 10) + (b % 10) < 10 || a + b >= 1000);
+    return story(`도서관에 동화책이 ${a}권, 과학책이 ${b}권 있어요. 두 가지 책은 모두 몇 권일까요?`, a + b, nums(a + b, [a + b - 10, a + b + 100, a + b - 100]).map(c => withU('권')(c.v)), '일의 자리부터 더해');
+  }
+  if (t === 'sub') {
+    let a, b; do { a = int(512, 950); b = int(168, 489); } while ((a % 10) >= (b % 10));
+    return story(`줄넘기를 지우는 ${a}번, 도하는 ${b}번 했어요. 지우는 도하보다 몇 번 더 했을까요?`, a - b, nums(a - b, [a - b + 10, a + b, a - b - 100]).map(c => withU('번')(c.v)), '큰 수에서 작은 수를 빼');
+  }
+  const h = int(1, 9), m = 5 * int(2, 10), dh = int(1, 2), dm = 5 * int(3, 9);
+  const end = h * 60 + m + dh * 60 + dm, lab = x => `${Math.floor(x / 60)}시 ${x % 60}분`;
+  return story(`${h}시 ${m}분에 집에서 출발해서 ${dh}시간 ${dm}분 뒤에 할머니 댁에 도착했어요. 도착한 시각은 몇 시 몇 분일까요?`, lab(end), strs(lab(end), [`${h + dh}시 ${m + dm}분`, lab(end + 60), lab(end - 10)]), '60분은 1시간으로 바꿔');
+}
+
+// ── 만 8세 → 초3 수준 (3학년 1·2학기 교과서·익힘책 유형) ──
 const grade3 = d => mix([
-  [4, () => divide([[2, 5], [2, 3, 4, 5], [2, 3, 4, 5, 6, 7, 8, 9]][d])],
-  [3, () => three(d)],
-  [[0, 2, 3][d], () => twoByOne(Math.max(1, d))],
+  [[2, 1, 0.5][d], () => divide([[2, 3, 4, 5], [2, 3, 4, 5, 6, 7, 8, 9], [6, 7, 8, 9]][d]), '나눗셈'],
+  [[1, 1, 1][d], divBox, '곱셈과 나눗셈의 관계'],
+  [[1.5, 1, 0.7][d], () => three(pick([1, 2])), '세 자리 덧셈·뺄셈'],
+  [[1.5, 1.2, 0.8][d], () => twoByOne(2), '두 자리 × 한 자리'],
+  [[0, 1, 1][d], threeByOne, '세 자리 × 한 자리'],
+  [[0, 0, 1.5][d], twoByTwo, '두 자리 × 두 자리'],
+  [[0, 1.5, 1.5][d], remDiv, '나머지 있는 나눗셈'],
+  [[0, 0, 1][d], twoDivOne, '두 자리 ÷ 한 자리'],
+  [[1, 1, 1][d], () => fraction(d), '분수'],
+  [[0, 0.8, 0.5][d], decimal, '소수'],
+  [[1, 1.2, 1.5][d], () => units3(d), '단위'],
+  [[1.5, 2, 2.5][d], () => word3(d), '문장제'],
 ]);
 
 // ── 도전: 초4 1학기 '큰 수' (다섯 자리 수) ──
