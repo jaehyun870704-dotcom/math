@@ -17,7 +17,7 @@ export function initVoice() {
 export function speak(text) {
   if (!text || !('speechSynthesis' in window)) return Promise.resolve();
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/[−]/g, '빼기').replace(/×/g, '곱하기'));
+  const u = new SpeechSynthesisUtterance(text.replace(/[−]/g, '빼기').replace(/×/g, '곱하기').replace(/÷/g, '나누기'));
   u.lang = 'ko-KR';
   if (voice) u.voice = voice;
   u.rate = 0.95;

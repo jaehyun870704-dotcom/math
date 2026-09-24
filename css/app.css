@@ -389,3 +389,17 @@ body[data-young="1"] .ch { border-radius: 30px; }
 .zoo.xs:not(.groups) .an { font-size: 30px; width: 42px; text-align: center; padding: 0; }
 .tbl.place th { font-size: 28px; min-width: 90px; }
 .tbl.place td { font-size: 52px; }
+
+/* ── 나눗셈 모션 ── */
+.share { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.pile { display: flex; flex-wrap: wrap; justify-content: center; max-width: 520px; min-height: 40px; gap: 2px; }
+.pile .sn { font-size: 34px; }
+.pile.s .sn { font-size: 22px; }
+.plates { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 960px; }
+.plate { display: flex; flex-direction: column; align-items: center; background: #fff; border-radius: 22px; padding: 6px 8px; box-shadow: var(--shadow); }
+.plate .who { font-size: 40px; line-height: 1.1; }
+.dish { display: grid; grid-template-columns: repeat(3, 26px); justify-content: center; min-height: 30px; background: #F6EEDF; border-radius: 14px; padding: 3px; }
+.dish .sn { font-size: 24px; position: relative; }
+.sn.hop { animation: pop .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+.dish .sn.cnt.on { background: #E6F6EC; border-radius: 8px; }
+.lvcard b { font-size: 24px; }

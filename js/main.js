@@ -72,7 +72,7 @@ function showHome() {
       ${LEVELS.map(l => `
         <button class="lvcard" data-lv="${l.id}" style="background:${l.color}">
           <span class="lvi">${l.icon}</span>
-          <span class="lva">${l.age}</span>
+          <span class="lva">${l.age} · ${l.lv}</span>
           <b>${l.title}</b>
         </button>`).join('')}
     </div>
@@ -126,7 +126,7 @@ async function renderProblem(restored) {
   const c = S.cur, q = c.q, young = LEVEL[S.levelId].young;
   if (restored) c.t0 = Date.now();
   $('.prompt').textContent = young ? '' : q.text;
-  $('.prompt').hidden = young;
+  $('.prompt').hidden = young || !!q.hideText;
   $('.visual').innerHTML = q.visual || '';
   $('.visual').classList.remove('glow');
   $('.choices').innerHTML = q.choices.map((o, i) => `<button class="ch" data-act="pick" data-i="${i}">${o.html}</button>`).join('');

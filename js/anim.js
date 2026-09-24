@@ -17,6 +17,7 @@ export async function play(el, an, say) {
   const wait = ms => sleep(ms);
   if (an.type === 'add' || an.type === 'sub') await animals(el, an, step, wait, alive);
   else if (an.type === 'mul') await groups(el, an, step, wait, alive);
+  else if (an.type === 'div') await shareOut(el, an, step, wait, alive);
   else await blocks(el, an, step, wait, alive);
   return alive();
 }
@@ -128,4 +129,27 @@ async function blocks(el, { type, a, b }, step, wait, alive) {
     await wait(500);
     await step(`${b}${eul(b)} 뺐어. 남은 건 얼마일까?`, 100);
   }
+}
+
+// 나눗셈: 간식 더미를 동물들에게 한 개씩 차례로 나눠 줌
+async function shareOut(el, { n, k, e, name, item, itemName }, step, wait, alive) {
+  el.innerHTML = `<div class="share"><div class="pile${n > 30 ? ' s' : ''}"></div><div class="plates"></div></div>`;
+  const pile = el.querySelector('.pile'), plates = el.querySelector('.plates');
+  const snacks = Array.from({ length: n }, () => span(pile, 'sn pop', item));
+  const dish = Array.from({ length: k }, () => {
+    const p = span(plates, 'plate pop');
+    span(p, 'who', e);
+    return span(p, 'dish');
+  });
+  await step(`${itemName} ${cnt(n)} 개를 ${name} ${cnt(k)} 마리가 똑같이 나눠요`, 600);
+  for (let r = 0; r < n / k; r++) {
+    for (let i = 0; i < k; i++) {
+      if (!alive()) return;
+      snacks.pop().remove();
+      span(dish[i], 'sn cnt hop', item);
+    }
+    sfx.tap();
+    await wait(n > 30 ? 380 : 600);
+  }
+  await step('한 마리가 몇 개씩 가졌을까?', 100);
 }
